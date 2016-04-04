@@ -344,20 +344,6 @@ while ( my $line = <NAME> ) {
 		$node{$id}{'name'} = $name;
 		$node{$id}{'name'} .= " Taxonomy:$id" if $seen{$name}++;
 	}
-	elsif ( $line =~ /common name/ ) {    #  genbank common names
-		push( @{ $node{$id}{'common_name'} }, $name );
-		push( @{ $node{$id}{'synonyms'} },    $name );
-
-	}
-	elsif ( $line =~ /synonym/ ) {
-		push @{ $node{$id}{'synonyms'} }, $name;
-	}
-
-# populate $tax_file with the ids from the names file if a filtering file is not passed
-	if ( !$infile ) {
-		$tax_file{$id} = $id;
-	}
-	#
 }
 
 close(NAME);
