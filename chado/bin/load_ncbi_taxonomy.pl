@@ -415,7 +415,7 @@ my $coderef = sub {
 "SKIPPING: No record found for genbank taxon id $id! Check your infile !\n";
 			next NODE;
 		}
-		my $dbxref = $schema->resultset("General::Dbxref")->insert(
+		my $dbxref = $schema->resultset("General::Dbxref")->create(
 			{
 				accession => $genbank_taxon_accession,
 				db_id     => $db_id,
@@ -465,7 +465,7 @@ my $coderef = sub {
 		my $organism_id = $organism->get_column('organism_id');
 
 		my $organism_dbxref =
-		  $schema->resultset('Organism::OrganismDbxref')->insert(
+		  $schema->resultset('Organism::OrganismDbxref')->create(
 			{
 				organism_id => $organism_id,
 				dbxref_id   => $dbxref_id,
