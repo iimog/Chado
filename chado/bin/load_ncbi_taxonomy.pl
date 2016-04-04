@@ -422,7 +422,7 @@ my $coderef = sub {
 
 		my $genus   = $node{$id}{'genus'};
 		my $species = $node{$id}{'species'};
-		my ( $organism, $update, $insert );
+		my $organism;
 
 		###message("looking at organism $genbank_taxon_accession, genus=$genus, species=$species\n");
 
@@ -430,37 +430,21 @@ my $coderef = sub {
 			die
 "NO GENUS OR SPECIES FOUND FOR tax_id $genbank_taxon_accession! Check your input file! \n";
 		}
-		if ( !$organism ) {    #create a new empty row object
-			$organism = $schema->resultset('Organism::Organism')->new( {} );
-			$insert = 1;
-		}
-		else { $update = 1; }
+		$organism = $schema->resultset('Organism::Organism')->new( {} );
 
 		$organism->set_column( genus        => $node{$id}{'genus'} );
 		$organism->set_column( species      => $node{$id}{'species'} );
 		$organism->set_column( abbreviation => $abbreviation );
 		$organism->set_column( common_name  => $common_name );
 
-		if ($update) {
-			$organism->update();
-			message(
-				"*Updating organism "
-				  . $organism->get_column('organism_id')
-				  . " (species="
-				  . $organism->species . ")\n",
-				1
-			);
-		}
-		if ($insert) {
-			$organism->insert();
-			message(
-				"New organism "
-				  . $organism->get_column('organism_id')
-				  . " (species="
-				  . $organism->species . ")\n",
-				1
-			);
-		}
+		$organism->insert();
+		message(
+			"New organism "
+			  . $organism->get_column('organism_id')
+			  . " (species="
+			  . $organism->species . ")\n",
+			1
+		);
 		my $organism_id = $organism->get_column('organism_id');
 
 		###########################################
