@@ -218,7 +218,7 @@ while ( my $level =  <DATA> )  {
 			print ERR "No cvterm found for type $level! Check your cvterm table for loaded taxonomy (cv name should be 'taxonomy') \n\n";
 			die "No cvterm found for type $level! Check your cvterm table for loaded taxonomy (cv name should be 'taxonomy') . See perldoc load_taxonomy_cvterms.pl \n\n";
 	}
-	$okay_level{$level} = $level_cvterm
+	$okay_level{$level} = $level_id;
 }
 
 my %node       = ();
