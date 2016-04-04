@@ -361,28 +361,9 @@ foreach my $id ( keys %node ) {
 			1
 		);
 	}
-	if ( $node{$id}{'level'} eq 'species' ) {
-
-		# load the genus name from the parent_taxid
-		if ( !$tax_file{$parent_taxid} ) {
-			die "No parent id found for species "
-			  . $node{$id}{'name'}
-			  . " (id = '"
-			  . $id
-			  . "') !! Check your input file !!\n";
-		}
-
-		$node{$id}{'genus'}   = $node{$parent_taxid}{'name'};
-		$node{$id}{'species'} = $node{$id}{'name'};
-		###message("FOUND SPECIES: " . $node{ $id }{ 'name' } . " genus = " . $node{ $id }{ 'genus' } . "\n" , 1);
-
-	}
-	else {
-		###message("FOUND NODE NAME: " . $node{ $node{ $id }{ 'parent_taxid' }}{ 'name' } . "( genus = " . $node{ $id }{ 'level' } . " species = " . $node{ $id }{ 'name' } . "\n",1);
-
-		$node{$id}{'genus'}   = $node{$id}{'level'};
-		$node{$id}{'species'} = $node{$id}{'name'};
-	}
+	###message("FOUND NODE NAME: " . $node{ $node{ $id }{ 'parent_taxid' }}{ 'name' } . "( genus = " . $node{ $id }{ 'level' } . " species = " . $node{ $id }{ 'name' } . "\n",1);
+	$node{$id}{'genus'}   = $node{$id}{'level'};
+	$node{$id}{'species'} = $node{$id}{'name'};
 }
 
 ##########################
