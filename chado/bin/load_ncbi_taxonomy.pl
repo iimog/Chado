@@ -297,6 +297,10 @@ while ( my $line = <NODE> ) {
         message("Node rank not found in the database (" . $okay_level{ $level } . "). Skipping\n");
         next;
     }
+    if ( $parent == $id ) {
+        message("Loop condition found, this means id " . $id . " is assumed to be the root\n");
+        $parent = undef;
+    }
     # check for data consistency
     if ($infile) {
 	if (  exists $tax_file{$id}  ) {
