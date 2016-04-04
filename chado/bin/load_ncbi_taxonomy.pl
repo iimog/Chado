@@ -320,6 +320,9 @@ while ( my $line = <NODE> ) {
 			}
 		}
 		else { next(); }    # skip nodes not in tax_file
+	} else {
+		# populate $tax_file with the ids from the nodes file if a filtering file is not passed
+		$tax_file{$id} = $id;
 	}
 
 	###message("STORING NODE is node hash\n",1);
