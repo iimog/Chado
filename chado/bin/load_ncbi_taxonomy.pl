@@ -280,7 +280,7 @@ my $phylotree = $schema->resultset('Phylogeny::Phylotree')->find_or_create(
 );
 
 my $phylotree_id = $phylotree->phylotree_id();
-message( "Created a new phylotee with id $phylotree_id\n\n\n", 1 );
+message( "Created a new phylotree with id $phylotree_id\n\n\n", 1 );
 
 #remove all existing phylonodes for this tree and reset the database sequence
 
