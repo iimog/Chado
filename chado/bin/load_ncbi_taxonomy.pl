@@ -478,7 +478,7 @@ my $coderef = sub {
 		$phylonode{$id}{'phylonode_id'} = $next_phylonode_id++;
 		$phylonode{$id}{'organism_id'}  = $organism_id;
 		$phylonode{$id}{'parent_taxid'} = $node{$id}{'parent_taxid'};
-		$phylonode{$id}{'type_id'}      = $level_id;
+		$phylonode{$id}{'type_id'}      = $okay_level{$node{$id}{'level'}};
 
 	}
 
