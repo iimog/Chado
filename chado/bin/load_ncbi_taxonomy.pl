@@ -447,20 +447,6 @@ my $coderef = sub {
 		);
 		my $organism_id = $organism->get_column('organism_id');
 
-		###########################################
-		#store the organism synonyms
-		foreach ( @{ $node{$id}{synonyms} } ) {
-			$organism->create_organismprops(
-				{ synonym    => $_ },
-				{ autocreate => 1 },
-			);
-			message($node{$id}{name}
-				  . " LEVEL=( "
-				  . $node{$id}{level}
-				  . ") Synonym is $_ \n" );
-		}
-		####################################################################
-
 		my $organism_dbxref =
 		  $schema->resultset('Organism::OrganismDbxref')->find_or_create(
 			{
