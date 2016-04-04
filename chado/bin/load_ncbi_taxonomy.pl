@@ -430,17 +430,6 @@ my $coderef = sub {
 			die
 "NO GENUS OR SPECIES FOUND FOR tax_id $genbank_taxon_accession! Check your input file! \n";
 		}
-		$organism = $schema->resultset('Organism::Organism')->search(
-			{
-				species => { 'ilike' => $species }
-			}
-		  )
-		  ->single; # lookup is by species only . NCBI species should be unique!
-		if ( !$organism )
-		{ #maybe the organism is already loaded with the ncbi taxonomy id, but the species name has changed?
-			my $organism_dbxref = $dbxref->organism_dbxrefs->single;
-			$organism = $organism_dbxref->organism if $organism_dbxref;
-		}
 		if ( !$organism ) {    #create a new empty row object
 			$organism = $schema->resultset('Organism::Organism')->new( {} );
 			$insert = 1;
