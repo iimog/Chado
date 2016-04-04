@@ -455,27 +455,6 @@ my $coderef = sub {
 			},
 		  );
 
-		#get the cvterm_id of the taxonomy level
-		my $level = $node{$id}{level};
-		my $taxonomy_cv =
-		  $schema->resultset("Cv::Cv")->find( { name => 'taxonomy' } );
-		if ( !$taxonomy_cv ) {
-			die
-"No cv found for 'taxonomy' . Did you run 'load_taxonomy_cvterms.pl' ? See the perldoc for more details \n\n";
-		}
-		my ($level_cvterm) =
-		  $taxonomy_cv->find_related( "cvterms", { name => $level } );
-
-		my $level_id = $level_cvterm->get_column("cvterm_id") if $level_cvterm;
-
-		if ( !$level_cvterm ) {
-
-			print ERR
-"No cvterm found for type $level! Check your cvterm table for loaded taxonomy (cv name should be 'taxonomy') \n\n";
-			die
-"No cvterm found for type $level! Check your cvterm table for loaded taxonomy (cv name should be 'taxonomy') . See perldoc load_taxonomy_cvterms.pl \n\n";
-		}
-
 #store a new phylonode_id + phylonode_organism. This is necessary for storing later the parent_phylonode_id
 # and eventuay the left_idx and right_idx.
 
