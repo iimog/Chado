@@ -423,7 +423,7 @@ my $coderef = sub {
 		}
 		my $common_name;
 		my $c = @{ $node{$id}{'common_name'} }
-		  if ( defined @{ $node{$id}{'common_name'} } );
+		  if ( (ref($node{$id}{'common_name'}) eq 'ARRAY') && @{ $node{$id}{'common_name'} } );
 		$common_name = join( ",", @{ $node{$id}{'common_name'} } ) if $c;
 
 		my $genus   = $node{$id}{'genus'};
@@ -464,90 +464,80 @@ my $coderef = sub {
 #store a new phylonode_id + phylonode_organism. This is necessary for storing later the parent_phylonode_id
 # and eventuay the left_idx and right_idx.
 
-		$phylonode{$id}{'phylonode_id'} = $next_phylonode_id++;
 		$phylonode{$id}{'organism_id'}  = $organism_id;
 		$phylonode{$id}{'parent_taxid'} = $node{$id}{'parent_taxid'};
 		$phylonode{$id}{'type_id'}      = $okay_level{$node{$id}{'level'}};
 
 	}
-
-#now that all the organisms are stored, we can store the relationships (=phylonodes)
-	my %stored = ();
-	my %test   = ();
-	foreach my $id ( keys %phylonode ) {
-
-		my $phylonode_id = $phylonode{$id}{'phylonode_id'};
-		my $organism_id  = $phylonode{$id}{'organism_id'};
-		my $parent_phylonode_id = 'NULL';
-		if (defined $phylonode{$id}{'parent_taxid'})
+	
+	foreach my $taxid ( keys %phylonode ) {
+		my $parent_taxid = 'NULL';
+		if (defined $phylonode{$taxid}{'parent_taxid'})
 		{
-			$parent_phylonode_id = $phylonode{ $phylonode{$id}{'parent_taxid'} }{'phylonode_id'} || 'NULL';
+			$parent_taxid = (exists $phylonode{ $phylonode{$taxid}{'parent_taxid'} } ? $phylonode{$taxid}{'parent_taxid'} : 'NULL');
 		}
-		$root_id = $phylonode_id if $parent_phylonode_id eq 'NULL';
-		if ( $parent_phylonode_id eq 'NULL' ) {
-			message(
-"organism $organism_id does not have a parent! (phylonode_id = $phylonode_id)\n",
-				1
-			);
+		$root_id = $taxid if $parent_taxid eq 'NULL';
+		if ( $parent_taxid eq 'NULL' ) {
+			message("organism $organism_id does not have a parent! (phylonode_id = $taxid)\n",	1);
 		}
-		my $type_id = $phylonode{$id}{'type_id'} || 'NULL';
-		push @{ $test{$parent_phylonode_id} }, $phylonode_id;
-		my $insert =
-"INSERT INTO tmp_phylonode (phylotree_id, phylonode_id, parent_phylonode_id, organism_id, type_id) 
-             VALUES ($phylotree_id,$phylonode_id, $parent_phylonode_id, $organism_id, $type_id)";
-
+		push @{ $children{$parent_taxid} }, $taxid;
 		$node_count++;
-		$dbh->do($insert);
 	}
 
 	#now walk through the tmp table and update the indexes
 
 	message( "the root_id is $root_id\n", 1 );
-
+	$phylonode{$root_id}{'parent_taxid'} = undef;
 	if ( !$root_id ) { die "No organism id found for root node! \n"; }
-	walktree( $root_id, 1 );
+	walktree( $root_id, 0 );
 
 	message("Updating the phylonode and phylonode_organism tables\n\n");
-	my @updates = (
-"INSERT INTO phylonode (phylonode_id, phylotree_id, parent_phylonode_id, left_idx, right_idx, type_id) SELECT phylonode_id, phylotree_id, parent_phylonode_id, left_idx, right_idx, type_id  FROM tmp_phylonode",
-"INSERT INTO phylonode_organism (phylonode_id, organism_id) SELECT phylonode_id, organism_id FROM tmp_phylonode"
-	);
+	
+    my @sorted_phylonode_keys = sort {$phylonode{$a}{'left_idx'} <=> $phylonode{$b}{'left_idx'}} keys %phylonode;
 
-	foreach (@updates) { $dbh->do($_); }
-
+	my @tuple_status = ();
+	my $sql = "INSERT INTO phylonode (phylonode_id, phylotree_id, parent_phylonode_id, left_idx, right_idx, type_id) 
+             VALUES (?,?,?,?,?,?)";
+    my $sth = $dbh->prepare($sql);
+    $sth->bind_param_array(1, [ @sorted_phylonode_keys ]);
+    $sth->bind_param_array(2, $phylotree_id);
+    $sth->bind_param_array(3, [ map { $phylonode{$_}{'parent_taxid'} } (@sorted_phylonode_keys) ]);
+    $sth->bind_param_array(4, [ map { $phylonode{$_}{'left_idx'} } (@sorted_phylonode_keys) ]);
+    $sth->bind_param_array(5, [ map { $phylonode{$_}{'right_idx'} } (@sorted_phylonode_keys) ]);
+    $sth->bind_param_array(6, [ map { $phylonode{$_}{'type_id'} } (@sorted_phylonode_keys) ]);
+    $sth->execute_array({ ArrayTupleStatus => \@tuple_status });
+    
+    $sql = "INSERT INTO phylonode_organism (phylonode_id, organism_id) 
+             VALUES (?,?)";
+    $sth = $dbh->prepare($sql);
+    $sth->bind_param_array(1, [ @sorted_phylonode_keys ]);
+    $sth->bind_param_array(2, [ map { $phylonode{$_}{'organism_id'} } (@sorted_phylonode_keys) ]);
+    $sth->execute_array({ ArrayTupleStatus => \@tuple_status });
+    
+	
 	sub walktree {
 		my $phylonode_id = shift;
-		our $ctr = shift;
+		my $ctr = shift;
 		message( "walking the tree for id $phylonode_id, index count is $ctr\n",
 			1 );
-		my $children = $dbh->prepare(
-			"SELECT phylonode_id, organism_id
-                              FROM tmp_phylonode
-                              WHERE parent_phylonode_id = ?"
-		);
-		my $setleft = $dbh->prepare(
-			"UPDATE tmp_phylonode
-                              SET left_idx = ?
-                              WHERE phylonode_id = ?"
-		);
-		my $setright = $dbh->prepare(
-			"UPDATE tmp_phylonode
-                              SET right_idx = ?
-                              WHERE phylonode_id = ?"
-		);
 
-		$setleft->execute( $ctr++, $phylonode_id );
+		$phylonode{$phylonode_id}{"left_idx"} = ++$ctr;
 		message( "Setting left index= $ctr for parent $phylonode_id\n\n", 1 );
-		$children->execute($phylonode_id);
-
-		while ( my ( $child_id, $organism_id ) = $children->fetchrow_array() ) {
-			message( "Found child_id $child_id (organism_id = $organism_id) \n",
-				1 );
-			walktree( $child_id, $ctr );
+		
+		my @children = ();
+		if(exists $children{$phylonode_id}){
+			@children = @{$children{$phylonode_id}};			
 		}
-		$setright->execute( $ctr++, $phylonode_id );
+		foreach my $child_id (@children) {
+			message( "Found child_id $child_id \n",
+				1 );
+			$ctr = walktree( $child_id, $ctr );
+		}
+		
+		$phylonode{$phylonode_id}{"right_idx"} = ++$ctr;
 		message( "Setting right index= $ctr for phylonode id $phylonode_id\n\n",
 			1 );
+		return $ctr;
 	}
 	if ($opt_t) { die "TEST RUN! rolling back!\n"; }
 };
