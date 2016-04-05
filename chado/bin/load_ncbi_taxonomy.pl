@@ -385,24 +385,11 @@ foreach my $id ( keys %node ) {
 	$node{$id}{'species'} = $node{$id}{'name'};
 }
 
-##########################
-#use temp table for generating the phylonode_ids
-
-$dbh->do(
-	"CREATE TEMP TABLE tmp_phylonode (
- phylonode_id integer NOT NULL PRIMARY KEY,  
- phylotree_id integer ,
- organism_id integer,
- parent_phylonode_id integer,
- left_idx integer,
- right_idx integer,
- type_id integer)"
-);
-
 ############################################
 my $next_phylonode_id = $maxval{'phylonode'} + 1;
 my %phylonode         = ();
 my $node_count        = 0;
+my %children = ();
 
 my $coderef = sub {
 	my $root_id;
