@@ -147,6 +147,7 @@ use Bio::GMOD::DB::Config;
 use Bio::Chado::Schema;
 use Try::Tiny;
 use Getopt::Std;
+use Data::Dumper;
 
 our (
 	$opt_H, $opt_D, $opt_v, $opt_t, $opt_i,
@@ -199,6 +200,7 @@ $dsn .= ";port=$port" if $port;
 
 $schema = Bio::Chado::Schema->connect( $dsn, $user, $pass || '' );
 $dbh = $schema->storage->dbh();
+$dbh->{RaiseError} = 1;
 
 if ( !$schema || !$dbh ) { die "No schema or dbh is avaiable! \n"; }
 
@@ -318,7 +320,7 @@ while ( my $line = <NODE> ) {
 	if ( $parent == $id ) {
 		message("Loop condition found, this means id "
 			  . $id
-			  . " is assumed to be the root\n" );
+			  . " is assumed to be the root\n", 1);
 		$parent = undef;
 	}
 
